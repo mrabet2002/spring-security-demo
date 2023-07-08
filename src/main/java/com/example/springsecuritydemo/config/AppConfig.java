@@ -14,14 +14,21 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class AppConfig {
     private final IUserService userService;
 
+    /**
+     * Specifying the UserDetailsService implementation and the password encoder
+     * that That will be used by the authenticationProvider to authenticate the user
+     */
     @Bean
-    public AuthenticationProvider authenticationProvider(){
+    public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider daoAuthProvider = new DaoAuthenticationProvider();
         daoAuthProvider.setUserDetailsService(userService);
         daoAuthProvider.setPasswordEncoder(passwordEncoder());
         return daoAuthProvider;
     }
 
+    /**
+     * The passwords will be encoded using BCrypt
+     * */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

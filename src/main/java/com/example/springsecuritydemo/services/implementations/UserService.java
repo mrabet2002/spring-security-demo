@@ -16,6 +16,10 @@ public class UserService implements IUserService {
     private final UserRepository repository;
     private final UserMapper mapper;
 
+    /**
+     * Getting user by his email
+     * @param username the user email
+     * */
     @Override
     public User loadUserByUsername(String username) throws UsernameNotFoundException {
         return repository.findByEmail(username)
