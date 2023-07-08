@@ -31,6 +31,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
+
                 // Specifying the permitted paths
                 .authorizeHttpRequests(
                         authorize -> authorize
@@ -39,16 +40,24 @@ public class SecurityConfig {
                                 .anyRequest()
                                 .authenticated()
                 )
+
                 // Setting the session management type to stateless
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+
                 // Setting the authentication provider
                 // (Bean defined in the AppConfig class)
                 .authenticationProvider(authenticationProvider)
+
                 // Setting ore JwtAuthenticationFilter
                 // before the UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // Setting the HTTPS for all the endpoints
+                .requiresChannel(
+                        channel -> channel.requestMatchers("/**").requiresSecure()
+                )
                 .build();
     }
 
