@@ -4,6 +4,7 @@ import com.example.springsecuritydemo.config.JwtConfig;
 import com.example.springsecuritydemo.entities.User;
 import com.example.springsecuritydemo.enums.Role;
 import com.example.springsecuritydemo.services.interfaces.IJwtService;
+import com.example.springsecuritydemo.services.interfaces.IUserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -20,21 +21,18 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class JwtService implements IJwtService {
+
     private final JwtConfig jwtConfig;
+    private final IUserService userService;
 
     @Override
     public String getUserEmail(String token) {
-        return getClaims(token).getSubject();
+        return getAccessTokenClaims(token).getSubject();
     }
 
     @Override
     public Role getUserRole(String token) {
-        return Role.valueOf(getClaims(token).get("role").toString());
-    }
-
-    @Override
-    public Date getTokenExpiration(String token) {
-        return getClaims(token).getExpiration();
+        return Role.valueOf(getAccessTokenClaims(token).get("role").toString());
     }
 
     /**
@@ -46,7 +44,9 @@ public class JwtService implements IJwtService {
     }
 
     /**
-     * Generate token py passing a user object and extra claims
+     * Generate token
+     * @param extraClaims any custom claims to add in the token
+     * @param user the user for whom we generate the token
      * */
     @Override
     public String generateToken(Map<String, Object> extraClaims, User user) {
@@ -56,33 +56,57 @@ public class JwtService implements IJwtService {
                 .setClaims(Map.of("role", user.getRole()))
                 .setSubject(user.getEmail())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + jwtConfig.getExpiredAfter()))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .setExpiration(new Date(System.currentTimeMillis() + jwtConfig.getAccessTokenExpiredAfter()))
+                .signWith(jwtConfig.getAccessTokenSecret(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    /**
+     * Generate token
+     * @param extraClaims any custom claims to add in the token
+     * @param subject the token subject
+     * @param secret specifying the secret key used for signing the token
+     * */
+    @Override
+    public String generateToken(Map<String, Object> extraClaims, String subject, Key secret, long expiredAfter) {
+        return Jwts
+                .builder()
+                .addClaims(extraClaims)
+                .setSubject(subject)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expiredAfter))
+                .signWith(secret, jwtConfig.getAlgorithm())
+                .compact();
+    }
+
+    @Override
+    public String generateAccessToken(String refreshToken) {
+        String userEmail = getRefreshTokenClaims(refreshToken).getSubject();
+        User user = userService.loadUserByUsername(userEmail);
+        return generateAccessToken(user);
     }
 
     // todo: implement these methods to use
     // to use access and refresh tokens instead of using
     // to avoid requiring the user to reauthenticate with their credentials
     @Override
-    public String generateAccessToken(Map<String, Object> extraClaims, User user) {
-        return null;
+    public String generateAccessToken(User user) {
+        return generateToken(
+                Map.of("role", user.getRole()),
+                user.getEmail(),
+                jwtConfig.getAccessTokenSecret(),
+                jwtConfig.getAccessTokenExpiredAfter()
+        );
     }
 
     @Override
-    public String generateRefreshToken(Map<String, Object> extraClaims, User user) {
-        return null;
-    }
-
-    @Override
-    public boolean isTokenExpired(String token) {
-        return getTokenExpiration(token).before(new Date());
-    }
-
-    @Override
-    public boolean isTokenValid(String token, User user){
-        final String userEmail = getUserEmail(token);
-        return userEmail.equals(user.getEmail()) && !isTokenExpired(token);
+    public String generateRefreshToken(User user) {
+        return generateToken(
+                new HashMap<>(),
+                user.getEmail(),
+                jwtConfig.getRefreshTokenSecret(),
+                jwtConfig.getRefreshTokenExpiredAfter()
+        );
     }
 
     @Override
@@ -93,16 +117,19 @@ public class JwtService implements IJwtService {
         return user;
     }
 
-    private Claims getClaims(String token){
+    private Claims getAccessTokenClaims(String token){
         return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+                .setSigningKey(jwtConfig.getAccessTokenSecret())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
 
-    private Key getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtConfig.getSecretKey());
-        return Keys.hmacShaKeyFor(keyBytes);
+    private Claims getRefreshTokenClaims(String token){
+        return Jwts.parserBuilder()
+                .setSigningKey(jwtConfig.getRefreshTokenSecret())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 }

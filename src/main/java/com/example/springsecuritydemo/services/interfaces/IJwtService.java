@@ -3,6 +3,7 @@ package com.example.springsecuritydemo.services.interfaces;
 import com.example.springsecuritydemo.entities.User;
 import com.example.springsecuritydemo.enums.Role;
 
+import java.security.Key;
 import java.util.Date;
 import java.util.Map;
 
@@ -11,19 +12,17 @@ public interface IJwtService {
 
     Role getUserRole(String token);
 
-    Date getTokenExpiration(String token);
-
     String generateToken(User user);
 
     String generateToken(Map<String, Object> extraClaims, User user);
 
-    String generateAccessToken(Map<String, Object> extraClaims, User user);
+    String generateToken(Map<String, Object> extraClaims, String subject, Key secret, long expiredAfter);
 
-    String generateRefreshToken(Map<String, Object> extraClaims, User user);
+    String generateAccessToken(String refreshToken);
 
-    boolean isTokenExpired(String token);
+    String generateAccessToken(User user);
 
-    boolean isTokenValid(String token, User user);
+    String generateRefreshToken(User user);
 
     User getUserFromToken(String jwt);
 }

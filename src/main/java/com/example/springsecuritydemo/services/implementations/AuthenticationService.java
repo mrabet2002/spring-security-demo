@@ -2,6 +2,7 @@ package com.example.springsecuritydemo.services.implementations;
 
 import com.example.springsecuritydemo.dto.AuthenticationRequest;
 import com.example.springsecuritydemo.dto.AuthenticationResponse;
+import com.example.springsecuritydemo.dto.RefreshTokenRequest;
 import com.example.springsecuritydemo.dto.RegisterRequest;
 import com.example.springsecuritydemo.entities.User;
 import com.example.springsecuritydemo.services.interfaces.IAuthenticationService;
@@ -12,7 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -29,12 +32,10 @@ public class AuthenticationService implements IAuthenticationService {
      * @return AuthenticationResponse object (contains the accessToken)
      * */
     @Override
+    @Transactional
     public AuthenticationResponse register(RegisterRequest request) {
         User user = userService.create(request);
-        String token = jwtService.generateToken(user);
-        if (token != null)
-            return new AuthenticationResponse(token);
-        throw new RuntimeException("An error occurred");
+        return generateTokens(user);
     }
 
     /**
@@ -53,9 +54,22 @@ public class AuthenticationService implements IAuthenticationService {
         );
         log.info("Authenticated");
         User user = userService.loadUserByUsername(request.getEmail());
-        String token = jwtService.generateToken(user);
-        if (token != null)
-            return new AuthenticationResponse(token);
+        return generateTokens(user);
+    }
+
+    @Override
+    public AuthenticationResponse refreshToken(RefreshTokenRequest request) {
+        String newAccessToken = jwtService.generateAccessToken(request.getRefreshToken());
+        AuthenticationResponse response = new AuthenticationResponse();
+        response.setAccessToken(newAccessToken);
+        return response;
+    }
+
+    private AuthenticationResponse generateTokens(User user){
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+        if (accessToken != null && refreshToken != null)
+            return new AuthenticationResponse(accessToken, refreshToken);
         throw new RuntimeException("An error occurred");
     }
 }

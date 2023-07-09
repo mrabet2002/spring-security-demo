@@ -3,6 +3,7 @@ package com.example.springsecuritydemo.security;
 import com.example.springsecuritydemo.entities.User;
 import com.example.springsecuritydemo.services.interfaces.IJwtService;
 import com.example.springsecuritydemo.services.interfaces.IUserService;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,7 +31,6 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final IJwtService jwtService;
-    private final IUserService userService;
 
 
     @Override
