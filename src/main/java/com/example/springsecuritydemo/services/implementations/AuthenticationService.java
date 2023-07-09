@@ -1,9 +1,6 @@
 package com.example.springsecuritydemo.services.implementations;
 
-import com.example.springsecuritydemo.dto.AuthenticationRequest;
-import com.example.springsecuritydemo.dto.AuthenticationResponse;
-import com.example.springsecuritydemo.dto.RefreshTokenRequest;
-import com.example.springsecuritydemo.dto.RegisterRequest;
+import com.example.springsecuritydemo.dto.*;
 import com.example.springsecuritydemo.entities.User;
 import com.example.springsecuritydemo.services.interfaces.IAuthenticationService;
 import com.example.springsecuritydemo.services.interfaces.IJwtService;
@@ -14,9 +11,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -58,9 +52,9 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
-    public AuthenticationResponse refreshToken(RefreshTokenRequest request) {
+    public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
         String newAccessToken = jwtService.generateAccessToken(request.getRefreshToken());
-        AuthenticationResponse response = new AuthenticationResponse();
+        RefreshTokenResponse response = new RefreshTokenResponse();
         response.setAccessToken(newAccessToken);
         return response;
     }

@@ -8,12 +8,14 @@ import com.example.springsecuritydemo.services.interfaces.IUserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +39,7 @@ public class JwtService implements IJwtService {
 
     /**
      * Generate token by passing a user object only
-     * */
+     */
     @Override
     public String generateToken(User user) {
         return generateToken(new HashMap<>(), user);
@@ -45,9 +47,10 @@ public class JwtService implements IJwtService {
 
     /**
      * Generate token
+     *
      * @param extraClaims any custom claims to add in the token
-     * @param user the user for whom we generate the token
-     * */
+     * @param user        the user for whom we generate the token
+     */
     @Override
     public String generateToken(Map<String, Object> extraClaims, User user) {
         return Jwts
@@ -63,10 +66,11 @@ public class JwtService implements IJwtService {
 
     /**
      * Generate token
+     *
      * @param extraClaims any custom claims to add in the token
-     * @param subject the token subject
-     * @param secret specifying the secret key used for signing the token
-     * */
+     * @param subject     the token subject
+     * @param secret      specifying the secret key used for signing the token
+     */
     @Override
     public String generateToken(Map<String, Object> extraClaims, String subject, Key secret, long expiredAfter) {
         return Jwts
@@ -117,7 +121,27 @@ public class JwtService implements IJwtService {
         return user;
     }
 
-    private Claims getAccessTokenClaims(String token){
+    @Override
+    public String generateSecretKey() throws NoSuchAlgorithmException {
+        // Create a KeyGenerator instance for the desired algorithm (e.g., AES, DES, etc.)
+        KeyGenerator keyGenerator = KeyGenerator.getInstance(jwtConfig.getAlgorithm().getJcaName());
+
+        // Generate a secure random key
+        SecureRandom secureRandom = new SecureRandom();
+        keyGenerator.init(secureRandom);
+
+        // Generate the secret key
+        SecretKey secretKey = keyGenerator.generateKey();
+
+        // Convert the secret key to a byte array
+        byte[] keyBytes = secretKey.getEncoded();
+
+        // Print the secret key as a hexadecimal string
+        return bytesToHex(keyBytes);
+    }
+
+    // Helper method to get access token claims
+    private Claims getAccessTokenClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(jwtConfig.getAccessTokenSecret())
                 .build()
@@ -125,11 +149,21 @@ public class JwtService implements IJwtService {
                 .getBody();
     }
 
-    private Claims getRefreshTokenClaims(String token){
+    // Helper method to get refresh token claims
+    private Claims getRefreshTokenClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(jwtConfig.getRefreshTokenSecret())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    // Helper method to convert byte array to hexadecimal string
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder result = new StringBuilder();
+        for (byte b : bytes) {
+            result.append(String.format("%02X", b));
+        }
+        return result.toString();
     }
 }

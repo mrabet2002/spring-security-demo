@@ -1,9 +1,6 @@
 package com.example.springsecuritydemo.web;
 
-import com.example.springsecuritydemo.dto.AuthenticationRequest;
-import com.example.springsecuritydemo.dto.AuthenticationResponse;
-import com.example.springsecuritydemo.dto.RefreshTokenRequest;
-import com.example.springsecuritydemo.dto.RegisterRequest;
+import com.example.springsecuritydemo.dto.*;
 import com.example.springsecuritydemo.services.interfaces.IAuthenticationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +29,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<AuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<RefreshTokenResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(authenticationService.refreshToken(request));
     }
 }

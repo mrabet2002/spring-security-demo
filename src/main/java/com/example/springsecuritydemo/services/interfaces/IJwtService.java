@@ -4,7 +4,7 @@ import com.example.springsecuritydemo.entities.User;
 import com.example.springsecuritydemo.enums.Role;
 
 import java.security.Key;
-import java.util.Date;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 public interface IJwtService {
@@ -25,4 +25,6 @@ public interface IJwtService {
     String generateRefreshToken(User user);
 
     User getUserFromToken(String jwt);
+
+    String generateSecretKey() throws NoSuchAlgorithmException;
 }
