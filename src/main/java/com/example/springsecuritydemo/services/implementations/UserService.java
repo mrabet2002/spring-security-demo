@@ -2,6 +2,7 @@ package com.example.springsecuritydemo.services.implementations;
 
 import com.example.springsecuritydemo.dto.RegisterRequest;
 import com.example.springsecuritydemo.entities.User;
+import com.example.springsecuritydemo.exceptions.UsernameExistsException;
 import com.example.springsecuritydemo.mappers.UserMapper;
 import com.example.springsecuritydemo.repositories.UserRepository;
 import com.example.springsecuritydemo.services.interfaces.IUserService;
@@ -29,7 +30,14 @@ public class UserService implements IUserService {
     @Transactional
     @Override
     public User create(RegisterRequest registerRequest){
+        if (isUserExists(registerRequest.getEmail()))
+            throw new UsernameExistsException();
         User user = mapper.fromRegisterRequest(registerRequest);
         return repository.save(user);
+    }
+
+    @Override
+    public boolean isUserExists(String email){
+        return repository.existsByEmail(email);
     }
 }

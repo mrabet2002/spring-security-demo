@@ -10,4 +10,6 @@ public interface IUserService extends UserDetailsService {
     User loadUserByUsername(String username) throws UsernameNotFoundException;
     @Transactional
     User create(RegisterRequest registerRequest);
+
+    boolean isUserExists(String email);
 }
