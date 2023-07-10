@@ -8,7 +8,9 @@ import com.example.springsecuritydemo.services.interfaces.IUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +40,7 @@ public class AuthenticationService implements IAuthenticationService {
      * @return AuthenticationResponse object (contains the accessToken)
      * */
     @Override
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+    public AuthenticationResponse authenticate(AuthenticationRequest request) throws BadCredentialsException {
         // Authenticating user
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -59,6 +61,8 @@ public class AuthenticationService implements IAuthenticationService {
         return response;
     }
 
+    // Helper methode to generate access and refresh tokens
+    // to avoid redundancy in code
     private AuthenticationResponse generateTokens(User user){
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);

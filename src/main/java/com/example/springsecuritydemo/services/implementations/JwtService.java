@@ -6,6 +6,7 @@ import com.example.springsecuritydemo.enums.Role;
 import com.example.springsecuritydemo.services.interfaces.IJwtService;
 import com.example.springsecuritydemo.services.interfaces.IUserService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.RequiredArgsConstructor;
@@ -90,9 +91,6 @@ public class JwtService implements IJwtService {
         return generateAccessToken(user);
     }
 
-    // todo: implement these methods to use
-    // to use access and refresh tokens instead of using
-    // to avoid requiring the user to reauthenticate with their credentials
     @Override
     public String generateAccessToken(User user) {
         return generateToken(
@@ -150,7 +148,7 @@ public class JwtService implements IJwtService {
     }
 
     // Helper method to get refresh token claims
-    private Claims getRefreshTokenClaims(String token) {
+    private Claims getRefreshTokenClaims(String token) throws ExpiredJwtException {
         return Jwts.parserBuilder()
                 .setSigningKey(jwtConfig.getRefreshTokenSecret())
                 .build()

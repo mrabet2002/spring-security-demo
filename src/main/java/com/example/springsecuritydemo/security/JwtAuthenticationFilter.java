@@ -1,15 +1,20 @@
 package com.example.springsecuritydemo.security;
 
+import com.example.springsecuritydemo.dto.ApiException;
 import com.example.springsecuritydemo.entities.User;
+import com.example.springsecuritydemo.mappers.JsonMapper;
 import com.example.springsecuritydemo.services.interfaces.IJwtService;
-import com.example.springsecuritydemo.services.interfaces.IUserService;
-import io.jsonwebtoken.ExpiredJwtException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,6 +36,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final IJwtService jwtService;
+    private final JsonMapper jsonMapper;
 
 
     @Override
@@ -41,7 +47,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         // Getting the token from the received request
         final String authHeader = request.getHeader("Authorization");
-        final String userEmail;
         // Checking if "Authorization" header contains a bearer token
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             // Chaining with the next filter
@@ -52,7 +57,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String jwt = authHeader.substring(7);
         // Checking if the token is valid
         // and getting the necessary user details from it
-        User user = jwtService.getUserFromToken(jwt);
+        User user;
+        try {
+            user = jwtService.getUserFromToken(jwt);
+        }catch (JwtException exception){
+            handleJwtException(request, response, filterChain);
+            return;
+        }
         // Setting the security context for the gotten user
         if (user.getEmail() != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
@@ -65,6 +76,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             );
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         }
+        filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Handling JwtException
+     * Setting the apiException
+     * and the required elements into the response
+     * */
+    protected void handleJwtException(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws IOException, ServletException {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+        ApiException apiException = new ApiException("Jwt is invalid", status);
+        response.setStatus(status.value());
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(jsonMapper.objectToJson(apiException));
         filterChain.doFilter(request, response);
     }
 }

@@ -1,7 +1,9 @@
 package com.example.springsecuritydemo.exceptions;
 
-public class UsernameExistsException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class UsernameExistsException extends ApiRequestException {
     public UsernameExistsException() {
-        super("username already taken!");
+        super("username already taken!", HttpStatus.valueOf(409));
     }
 }
